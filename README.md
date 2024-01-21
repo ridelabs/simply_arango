@@ -80,6 +80,8 @@ Take a query and count, get the first, get all
 
 We also support ordering and paging etc. Editing with an autocompleting editor makes it really easy to see what functions are available each step of the way. Chain things as deep as you want.
 
+Check out https://github.com/ridelabs/simply_arango/blob/main/orm/real_orm_test.go for the best example of what this golang arangodb orm wrapper usage looks like.
+
 
 Author: Eric Harrison (mailplum.com)
 
