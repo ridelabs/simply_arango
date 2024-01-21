@@ -5,15 +5,15 @@ simply_arango is a Go library for talking to an arangodb database.
 ## What this is
 simply_arango is a very simple ORM for ArangoDB in golang.
 
-The beauty of this library is how easy it is to make a query to filter records in a collection and then perform an 
-operation on those records. 
+The beauty of this library is how easy it is to make a query to filter records in a collection and then perform an
+operation on those records.
 
-I used the builder pattern to make this library easy to use and not clutter up your code even when building complex 
+We are using the builder pattern to make this library easy to use and not clutter up your code even when building complex
 AQL queries.
 
 
-Be aware, Arangodb has a lot of cool stuff that I haven't needed in my project, so those 
-things aren't implemented yet, especially graphs. Feel free to submit PRs if you have things you'd like to see in here. 
+Be aware, Arangodb has a lot of cool stuff that I haven't needed in my project, so those
+things aren't implemented yet, especially graphs. Feel free to submit PRs if you have things you'd like to see in here.
 
 
 ## Installation
@@ -57,12 +57,12 @@ id, err := collection.Create(ctx, &TestDocument{
 Simple chaining query (chain in as many filters as you want)
 ```go
 obj, err := collection.Query().WithinOrg("3434").Filter("email", "freddy@mycorp.com").First(ctx)
-	
+
 ```
 
 More complex query
 ```go
-o := q.Operator()
+o := q.Operator() // here you have to get the object used to create operators for this more complex Where query
 q := q.Where(
     o.And(
         o.EndsWith("email", "mycorp.com"),
@@ -82,4 +82,5 @@ We also support ordering and paging etc. Editing with an autocompleting editor m
 
 
 Author: Eric Harrison (mailplum.com)
+
 
