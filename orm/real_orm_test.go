@@ -506,7 +506,11 @@ func (s *RealOrmTests) extractAttributes(documents []interface{}, attributeName 
 // ------------------------------
 
 func TestOrmByReal(t *testing.T) {
-	gtest.RunSubTests(t, &RealOrmTests{})
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	} else {
+		gtest.RunSubTests(t, &RealOrmTests{})
+	}
 }
 
 // ------------------------------
