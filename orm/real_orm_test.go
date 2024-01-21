@@ -270,7 +270,7 @@ func (s *RealOrmTests) SubTestBasicQuery(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 2, count)
 
-	// now get it down to just jeremy
+	// now get it down to just bob
 	q.Where(o.Not(o.Equal("name", "Jeremy")))
 	count, err = q.Count(ctx)
 	assert.Nil(t, err)
