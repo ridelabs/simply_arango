@@ -41,7 +41,7 @@ type TestDocument struct {
 
 func (s *RealOrmTests) Setup(t *testing.T) {
 	// To make these tests work, you must have a .env file in this directory with the below variables
-	repoPath := os.Getenv("PWD") + "/../../../.env"
+	repoPath := os.Getenv("PWD") + "/../.env"
 	if err := godotenv.Load(repoPath); err != nil {
 		t.Fatal("Failed to load env file")
 	}
@@ -49,11 +49,10 @@ func (s *RealOrmTests) Setup(t *testing.T) {
 	dbPass := os.Getenv("ARANGODB_PASS")
 	dbUrl := os.Getenv("ARANGODB_URL")
 	dbName := os.Getenv("TEST_DB_NAME")
-	orgIdKey := os.Getenv("ORGANIZATION_ID_KEY")
 
 	ctx := context.TODO()
 
-	conn, err := NewConnection(ctx, dbName, dbUser, dbPass, dbUrl, orgIdKey)
+	conn, err := NewConnection(ctx, dbName, dbUser, dbPass, dbUrl)
 	if err != nil {
 		log.Error("Failed to connect to arangodb", log.Fields{"err": err})
 		os.Exit(5)
@@ -78,7 +77,7 @@ func (s *RealOrmTests) BeforeEach(t *testing.T) {
 	err := s.collection.Drop(ctx)
 	assert.NoError(t, err, "Should either drop or already be gone")
 
-	err = s.collection.Initialize(ctx, s.conn)
+	err = s.collection.Initialize(ctx)
 	assert.NoError(t, err, "Should have been created")
 }
 
@@ -256,13 +255,14 @@ func (s *RealOrmTests) SubTestBasicQuery(t *testing.T) {
 	assert.Equal(t, 8, count)
 
 	// You can chain create query filters and then perform operations on them
+	o := q.Operator()
 	q.InArray("apple", "fruits").
 		Where(
-			q.Or(
-				q.Equal("email", "bob@abc.com"),
-				q.And(
-					q.EndsWith("name", "emy"),
-					q.StartsWith("email", "jer"),
+			o.Or(
+				o.Equal("email", "bob@abc.com"),
+				o.And(
+					o.EndsWith("name", "emy"),
+					o.StartsWith("email", "jer"),
 				),
 			),
 		)
@@ -271,7 +271,7 @@ func (s *RealOrmTests) SubTestBasicQuery(t *testing.T) {
 	assert.Equal(t, 2, count)
 
 	// now get it down to just jeremy
-	q.Where(q.Not(q.Equal("name", "Jeremy")))
+	q.Where(o.Not(o.Equal("name", "Jeremy")))
 	count, err = q.Count(ctx)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, count)

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/ridelabs/mailplum/internal/arangodb_orm/encoding"
+	"github.com/ridelabs/simply_arango/encoding"
 	log "github.com/sirupsen/logrus"
 )
 

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/ridelabs/mailplum/internal/arangodb_orm/encoding"
+	"github.com/ridelabs/simply_arango/encoding"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/arangodb/go-driver"
@@ -28,19 +28,18 @@ type Collection struct {
 	AllocateRecord    ObjectFactory
 }
 
-func (c *Collection) Initialize(ctx context.Context, conn *Connection) error {
-	exists, err := conn.Database.CollectionExists(ctx, c.TableName)
+func (c *Collection) Initialize(ctx context.Context) error {
+	exists, err := c.Connection.Database.CollectionExists(ctx, c.TableName)
 	if err != nil {
 		return err
 	}
 	if !exists {
-		_, err := conn.Database.CreateCollection(ctx, c.TableName, nil)
+		_, err := c.Connection.Database.CreateCollection(ctx, c.TableName, nil)
 		if err != nil {
 			return err
 		}
 	}
 
-	c.Connection = conn
 	if c.OrganizationIdKey == "" {
 		c.OrganizationIdKey = "organization_id"
 	}
@@ -228,12 +227,9 @@ type CollectionFilter struct {
 	variableFactory *VariableFactory
 }
 
-func (c *CollectionFilter) MakeVariableIfNative(input interface{}) Expression {
-	switch v := input.(type) {
-	case float32, float64, int, int8, int16, int32, int64, byte, bool, string:
-		return c.variableFactory.MakeVariable(v)
-	default:
-		return &ExpressionWrapper{item: v}
+func (c *CollectionFilter) Operator() *Operator {
+	return &Operator{
+		variableFactory: c.variableFactory,
 	}
 }
 
@@ -243,66 +239,6 @@ type ExpressionWrapper struct {
 
 func (c *ExpressionWrapper) String() string {
 	return fmt.Sprintf("%s", c.item)
-}
-
-// ----------------------
-// Boolean operators
-// ----------------------
-
-func (c *CollectionFilter) And(left, right Expression) Expression {
-	return &AndExpression{
-		left:  left,
-		right: right,
-	}
-}
-
-func (c *CollectionFilter) Or(left, right Expression) Expression {
-	return &OrExpression{left: left, right: right}
-}
-
-func (c *CollectionFilter) Not(expression interface{}) Expression {
-	return &NotExpression{expression: c.MakeVariableIfNative(expression)}
-}
-
-func (c *CollectionFilter) Equal(attribute string, right interface{}) Expression {
-	return &EqualityExpression{left: NewAttribute(attribute), operator: EqualityExpressionEqual, right: c.MakeVariableIfNative(right)}
-}
-
-func (c *CollectionFilter) LessThan(attribute string, right Expression) Expression {
-	return &EqualityExpression{left: NewAttribute(attribute), operator: EqualityExpressionLessThan, right: c.MakeVariableIfNative(right)}
-}
-
-func (c *CollectionFilter) LessThanOrEqual(attribute string, right Expression) Expression {
-	return &EqualityExpression{left: NewAttribute(attribute), operator: EqualityExpressionLessThanOrEqualTo, right: c.MakeVariableIfNative(right)}
-}
-
-func (c *CollectionFilter) GreaterThan(attribute string, right Expression) Expression {
-	return &EqualityExpression{left: NewAttribute(attribute), operator: EqualityExpressionGreaterThan, right: c.MakeVariableIfNative(right)}
-}
-
-func (c *CollectionFilter) GreaterThanOrEqual(attribute string, right Expression) Expression {
-	return &EqualityExpression{left: NewAttribute(attribute), operator: EqualityExpressionGreaterThanOrEqualTo, right: c.MakeVariableIfNative(right)}
-}
-
-func (c *CollectionFilter) EndsWith(attribute string, pattern string) Expression {
-	return &LikeExpression{
-		left:  NewAttribute(attribute),
-		right: c.variableFactory.MakeVariable(fmt.Sprintf("%%%s", pattern)),
-	}
-}
-
-func (c *CollectionFilter) StartsWith(attribute string, pattern string) Expression {
-	return &LikeExpression{
-		left:  NewAttribute(attribute),
-		right: c.variableFactory.MakeVariable(fmt.Sprintf("%s%%", pattern)),
-	}
-}
-
-func (c *CollectionFilter) Contains(attribute string, pattern string) Expression {
-	return &LikeExpression{
-		left:  NewAttribute(attribute),
-		right: c.variableFactory.MakeVariable(fmt.Sprintf("%%%s%%", pattern)),
-	}
 }
 
 // ----------------------
@@ -350,6 +286,7 @@ func (c *CollectionFilter) InArray(value string, arrayName string) *CollectionFi
 // ---------------------
 // Commonly used filters/expressions
 // ---------------------
+
 func (c *CollectionFilter) WithinOrg(orgId string) *CollectionFilter {
 	return c.Where(&EqualityExpression{
 		left:     &DocumentAttribute{name: c.collection.OrganizationIdKey},

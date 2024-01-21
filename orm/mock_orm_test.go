@@ -5,7 +5,7 @@ import (
 	"github.com/houqp/gtest"
 	"testing"
 
-	"github.com/ridelabs/mailplum/internal/arangodb_orm/utils"
+	"github.com/ridelabs/simply_arango/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,9 +43,8 @@ func (s *OrmTests) BeforeEach(t *testing.T) {
 
 	s.collection = &Collection{
 		Connection: &Connection{
-			Database:          s.database,
-			Client:            nil,
-			OrganizationIdKey: "",
+			Database: s.database,
+			Client:   nil,
 		},
 
 		TableName:         "foo",
@@ -263,16 +262,17 @@ func (s *OrmTests) SubTestQueryMultipleFilterSubstr(t *testing.T) {
 
 func (s *OrmTests) SubTestQueryExpressions1(t *testing.T) {
 	q := s.collection.Query()
+	o := q.Operator()
 	objects, err := q.WithinOrg("8675309").
-		Where(q.Not("apple")).
-		Where(q.Not(RawValue("foobar"))).
+		Where(o.Not("apple")).
+		Where(o.Not(RawValue("foobar"))).
 		Where(
-			q.And(
-				q.Or(
-					q.StartsWith("a", "apple"),
-					q.Equal("a", "APPLE"),
+			o.And(
+				o.Or(
+					o.StartsWith("a", "apple"),
+					o.Equal("a", "APPLE"),
 				),
-				q.Equal("a", "apple"),
+				o.Equal("a", "apple"),
 			),
 		).List().Paging(20, 0).All(context.TODO())
 

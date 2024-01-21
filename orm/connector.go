@@ -8,12 +8,11 @@ import (
 )
 
 type Connection struct {
-	Database          driver.Database
-	Client            driver.Client
-	OrganizationIdKey string
+	Database driver.Database
+	Client   driver.Client
 }
 
-func NewConnection(ctx context.Context, databaseName, dbUser, dbPass, dbUrl, orgIdKey string) (*Connection, error) {
+func NewConnection(ctx context.Context, databaseName, dbUser, dbPass, dbUrl string) (*Connection, error) {
 	conn, err := http.NewConnection(http.ConnectionConfig{
 		Endpoints: []string{dbUrl},
 	})
@@ -55,8 +54,7 @@ func NewConnection(ctx context.Context, databaseName, dbUser, dbPass, dbUrl, org
 	}
 
 	return &Connection{
-		Database:          db,
-		Client:            arangoClient,
-		OrganizationIdKey: orgIdKey,
+		Database: db,
+		Client:   arangoClient,
 	}, nil
 }
