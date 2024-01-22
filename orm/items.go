@@ -117,6 +117,19 @@ func (c *ItemsOperator) formatLimitOrPaging() string {
 	return ""
 }
 
+func (c *ItemsOperator) First(ctx context.Context) (interface{}, error) {
+	matches, err := c.Limit(1).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(matches) < 1 {
+		return nil, nil
+	}
+
+	return matches[0], nil
+}
+
 func (c *ItemsOperator) All(ctx context.Context) ([]interface{}, error) {
 	query := fmt.Sprintf(`
 FOR doc IN @@collection
