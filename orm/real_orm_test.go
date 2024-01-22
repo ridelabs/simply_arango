@@ -410,9 +410,14 @@ func (s *RealOrmTests) SubTestQueryOrderBy(t *testing.T) {
 	assert.Equal(t, 16, len(objects))
 	letters = s.extractAttributes(objects, "C")
 	assert.Equal(t, []string{"p", "o", "n", "m", "l", "k", "j", "i", "h", "g", "f", "e", "d", "c", "b", "a"}, letters)
+}
+
+func (s *RealOrmTests) SubTestQueryRandomAll(t *testing.T) {
+	ctx := context.TODO()
+	_ = s.createDocuments(t)
 
 	// Random
-	objects, err = s.collection.Query().List().RandomOrder().All(ctx)
+	objects, err := s.collection.Query().List().RandomOrder().All(ctx)
 	assert.Nil(t, err)
 	assert.Equal(t, 16, len(objects))
 	letters1 := s.extractAttributes(objects, "C")
@@ -433,6 +438,67 @@ out:
 		}
 	}
 	assert.True(t, differenceFound, "Failed to find a difference in 10 tries!")
+}
+
+func (s *RealOrmTests) SubTestQueryRandomFirst(t *testing.T) {
+	ctx := context.TODO()
+	_ = s.createDocuments(t)
+
+	// First random one of the 2 matched
+	q := s.collection.Query()
+	o := q.Operator()
+	q.WithinOrg("121212").
+		InArray("apple", "fruits").
+		Where(
+			o.StartsWith("email", "jer"),
+		)
+
+	found := make(map[string]int)
+	for i := 0; i < 10; i++ {
+		object, err := q.List().RandomOrder().First(ctx)
+		assert.NoError(t, err, "expected no error")
+		doc, ok := object.(*TestDocument)
+		assert.True(t, ok)
+		if _, ok := found[doc.Email]; !ok {
+			found[doc.Email] = 1
+		} else {
+			found[doc.Email]++
+		}
+
+		if len(found) == 2 {
+			break
+		}
+	}
+
+	assert.Equal(t, len(found), 2, "Expected we'd get at least 2 matches for random order / first")
+}
+
+func (s *RealOrmTests) SubTestQueryOrderFirst(t *testing.T) {
+	ctx := context.TODO()
+	_ = s.createDocuments(t)
+
+	// First random one of the 2 matched
+	q := s.collection.Query()
+	o := q.Operator()
+	q.WithinOrg("121212").
+		InArray("apple", "fruits").
+		Where(
+			o.StartsWith("email", "jer"),
+		)
+
+	// order asc
+	object, err := q.List().OrderBy("email").Asc().First(ctx)
+	assert.NoError(t, err, "should be no err")
+	doc1, ok := object.(*TestDocument)
+	assert.True(t, ok)
+	assert.Equal(t, "jeremy@abc.com", doc1.Email)
+
+	// order the other way
+	object, err = q.List().OrderBy("email").Desc().First(ctx)
+	assert.NoError(t, err, "should be no err")
+	doc2, ok := object.(*TestDocument)
+	assert.True(t, ok)
+	assert.Equal(t, "jeren@abc.com", doc2.Email)
 }
 
 func (s *RealOrmTests) SubTestQueryLimitPaging(t *testing.T) {
