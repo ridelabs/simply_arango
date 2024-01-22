@@ -42,6 +42,8 @@ collection := &orm.Collection{
     OrganizationIdKey: "organization_id",
 }
 
+// Basic CRUD
+
 // create a doc
 id, err := collection.Create(ctx, &TestDocument{
     Name:           "Fred",
@@ -52,6 +54,34 @@ id, err := collection.Create(ctx, &TestDocument{
         "cherry", "apple", "persimmon",
     },
 })
+
+// read the doc back by id
+obj, err := collection.Get(ctx, id)
+if err != nil {
+    return nil, err
+}
+
+// read the doc back but be sure it's in the same domain (dipping into our Query abilities [see below])
+object, err := collection.Query().WithinOrg("3434").ById(id).First(ctx)
+if err != nil {
+    return nil, err
+}
+
+doc, ok := object.(*TestDocument)
+if !ok {
+    return errors.New("shouldn't happen!")
+}
+
+// update the doc
+if err := collection.Update(ctx, doc); err != nil {
+    return nil, err
+}
+
+// delete the doc
+if err := collection.Delete(ctx, doc); err != nil {
+    return nil, err
+}
+ 
 ```
 
 Simple chaining query (chain in as many filters as you want)
