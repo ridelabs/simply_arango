@@ -71,11 +71,16 @@ q := q.Where(
 ).InArray("persimmon", "fruits")
 ```
 
-Take a query and count, get the first, get all
+Take a query then you can perform multi-record operations on it like count, get the first, get all, page through them, update all or delete all
 ```go
 	q.Count(ctx)
 	q.First(ctx)
 	q.List().All(ctx)
+	q.List().OrderBy("c").Asc().Paging(4, 0).All(ctx)
+	q.UpdateAll(ctx, map[string]interface{}{
+		"fruits": []string{"mango", "coconut", "kiwi"},
+	})
+	q.DeleteAll(ctx)
 ```
 
 We also support ordering and paging etc. Editing with an autocompleting editor makes it really easy to see what functions are available each step of the way. Chain things as deep as you want.
