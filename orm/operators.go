@@ -59,6 +59,61 @@ func (c *Operator) GreaterThanOrEqual(attribute string, right Expression) Expres
 }
 
 // ----------------------
+// Epsilon (null or empty)
+// ----------------------
+
+type EpsilonOperator string
+
+const EpsilonEqual = EpsilonOperator("==")
+const EpsilonNotEqual = EpsilonOperator("!=")
+
+type EpsilonExpression struct {
+	left     interface{}
+	operator EpsilonOperator
+	isNull   bool
+}
+
+func (c *EpsilonExpression) String() string {
+	value := "\"\""
+	if c.isNull {
+		value = "null"
+	}
+	return fmt.Sprintf("(%s %s %s) ", c.left, c.operator, value)
+}
+
+func (c *Operator) IsNull(attribute string) Expression {
+	return &EpsilonExpression{
+		left:     NewAttribute(attribute),
+		operator: EpsilonEqual,
+		isNull:   true,
+	}
+}
+
+func (c *Operator) IsEmpty(attribute string) Expression {
+	return &EpsilonExpression{
+		left:     NewAttribute(attribute),
+		operator: EpsilonEqual,
+		isNull:   false,
+	}
+}
+
+func (c *Operator) IsNotNull(attribute string) Expression {
+	return &EpsilonExpression{
+		left:     NewAttribute(attribute),
+		operator: EpsilonNotEqual,
+		isNull:   true,
+	}
+}
+
+func (c *Operator) IsNotEmpty(attribute string) Expression {
+	return &EpsilonExpression{
+		left:     NewAttribute(attribute),
+		operator: EpsilonNotEqual,
+		isNull:   false,
+	}
+}
+
+// ----------------------
 // String operators
 // ----------------------
 
