@@ -37,6 +37,8 @@ type TestDocument struct {
 	Counter    int          `json:"counter"`
 	Fruits     []string     `json:"fruits"`
 	DeepFruits []*DeepFruit `json:"deep_fruits"`
+	Birthday1  string       `json:"birthday_1"`
+	Birthday2  string       `json:"birthday_2,omitempty"`
 }
 
 func (s *RealOrmTests) Setup(t *testing.T) {
@@ -123,6 +125,129 @@ func (s *RealOrmTests) createDocuments(t *testing.T) int {
 		}
 	}
 	return counter
+}
+
+func (s *RealOrmTests) SubTestNullOrEmptyCheck(t *testing.T) {
+	// Note: these tests rely on TestDocument's Birthday1 and Birthday2 with the appropriate non-omitempty and omitempty encoding modifiers
+	ctx := context.TODO()
+	myOrg := "777"
+	_, err := s.collection.Create(ctx, &TestDocument{
+		Name:           "alfred",
+		A:              "alpaca",
+		B:              "bear",
+		OrganizationId: myOrg,
+		Birthday1:      "2024-02-03T11:27:31−07:00",
+		Birthday2:      "2024-02-03T11:27:31−07:00",
+	})
+	assert.Nil(t, err)
+
+	_, err = s.collection.Create(ctx, &TestDocument{
+		Name:           "alfred",
+		A:              "alpaca",
+		B:              "bear",
+		OrganizationId: myOrg,
+		Birthday1:      "",
+		Birthday2:      "",
+	})
+	assert.Nil(t, err)
+
+	_, err = s.collection.Create(ctx, &TestDocument{
+		Name:           "alfred",
+		A:              "alpaca",
+		B:              "bear",
+		OrganizationId: myOrg,
+	})
+	assert.Nil(t, err)
+
+	q := s.collection.Query()
+	o := q.Operator()
+
+	// all documents in our org
+	matches, err := q.WithinOrg(myOrg).List().All(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, 3, len(matches), "expected 3 matches")
+
+	// filter by empty and null values
+
+	// all 3 should be not null (not omitempty)
+	q = s.collection.Query()
+	o = q.Operator()
+	matches, err = q.WithinOrg(myOrg).Where(o.IsNotNull("birthday_1")).List().All(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, 3, len(matches))
+
+	// 1 should be not null (omitempty causes the other 2 to be null)
+	q = s.collection.Query()
+	o = q.Operator()
+	matches, err = q.WithinOrg(myOrg).Where(o.IsNotNull("birthday_2")).List().All(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(matches))
+
+	// no nulls for the non omitempty
+	q = s.collection.Query()
+	o = q.Operator()
+	matches, err = q.WithinOrg(myOrg).Where(o.IsNull("birthday_1")).List().All(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(matches))
+
+	// 2 nulls for the omitempty
+	q = s.collection.Query()
+	o = q.Operator()
+	matches, err = q.WithinOrg(myOrg).Where(o.IsNull("birthday_2")).List().All(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(matches))
+
+	// for non omitempty, we should find 1, the others were converted to ""
+	q = s.collection.Query()
+	o = q.Operator()
+	matches, err = q.WithinOrg(myOrg).Where(o.IsNotEmpty("birthday_1")).List().All(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(matches))
+
+	// for omitempty, we should find that 0 are ""
+	q = s.collection.Query()
+	o = q.Operator()
+	matches, err = q.WithinOrg(myOrg).Where(o.IsNotEmpty("birthday_2")).List().All(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, 3, len(matches))
+
+	// for non omitempty, we should find 2 that are empty
+	q = s.collection.Query()
+	o = q.Operator()
+	matches, err = q.WithinOrg(myOrg).Where(o.IsEmpty("birthday_1")).List().All(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(matches))
+
+	// for omitempty, we should find 0 that are empty
+	q = s.collection.Query()
+	o = q.Operator()
+	matches, err = q.WithinOrg(myOrg).Where(o.IsEmpty("birthday_2")).List().All(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(matches))
+
+	// for both omitempty and non-omitempty, we should only get 1
+	q = s.collection.Query()
+	o = q.Operator()
+	matches, err = q.WithinOrg(myOrg).Where(
+		o.And(
+			o.Not(o.IsEmpty("birthday_1")),
+			o.Not(o.IsNull("birthday_1")),
+		),
+	).List().All(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(matches))
+	//
+	q = s.collection.Query()
+	o = q.Operator()
+	matches, err = q.WithinOrg(myOrg).Where(
+		o.And(
+			o.Not(o.IsEmpty("birthday_2")),
+			o.Not(o.IsNull("birthday_2")),
+		),
+	).List().All(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(matches))
+
 }
 
 func (s *RealOrmTests) SubTestBasicORM(t *testing.T) {
