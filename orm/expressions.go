@@ -69,7 +69,7 @@ func (c *LikeExpression) String() string {
 }
 
 // ---------------------
-// In
+// Arrays
 // ---------------------
 
 type InArrayExpression struct {
@@ -79,6 +79,14 @@ type InArrayExpression struct {
 
 func (c *InArrayExpression) String() string {
 	return fmt.Sprintf("%s IN %s", c.value, c.arrayName)
+}
+
+type EmptyArrayExpression struct {
+	arrayName interface{}
+}
+
+func (c *EmptyArrayExpression) String() string {
+	return fmt.Sprintf("%s == null OR LENGTH(%s) == 0", c.arrayName, c.arrayName)
 }
 
 // ---------------------

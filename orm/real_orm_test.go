@@ -250,6 +250,56 @@ func (s *RealOrmTests) SubTestNullOrEmptyCheck(t *testing.T) {
 
 }
 
+func (s *RealOrmTests) SubTestEmptyArrays(t *testing.T) {
+	ctx := context.TODO()
+	myOrg := "778"
+
+	_, err := s.collection.Create(ctx, &TestDocument{
+		OrganizationId: myOrg,
+		Name:           "emptyfruits",
+		Fruits:         make([]string, 0),
+	})
+	assert.Nil(t, err)
+
+	_, err = s.collection.Create(ctx, &TestDocument{
+		OrganizationId: myOrg,
+		Name:           "nullfruits",
+		Fruits:         nil,
+	})
+	assert.Nil(t, err)
+
+	_, err = s.collection.Create(ctx, &TestDocument{
+		OrganizationId: myOrg,
+		Name:           "nofruits",
+	})
+	assert.Nil(t, err)
+
+	_, err = s.collection.Create(ctx, &TestDocument{
+		OrganizationId: myOrg,
+		Name:           "onefruit",
+		Fruits:         []string{"watermelon"},
+	})
+	assert.Nil(t, err)
+
+	// all documents in our org
+	q := s.collection.Query()
+	matches, err := q.WithinOrg(myOrg).List().All(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, 4, len(matches), "expected 4 records")
+
+	// make sure we find the fruit
+	q = s.collection.Query()
+	res, err := q.WithinOrg("778").InArray("watermelon", "fruits").List().All(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(res))
+
+	// now we find 1 that is not empty
+	q = s.collection.Query()
+	res, err = q.WithinOrg("778").ArrayEmpty("fruits").List().All(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, 3, len(res))
+}
+
 func (s *RealOrmTests) SubTestBasicORM(t *testing.T) {
 	ctx := context.TODO()
 
