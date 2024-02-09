@@ -283,6 +283,12 @@ func (c *CollectionFilter) InArray(value string, arrayName string) *CollectionFi
 	})
 }
 
+func (c *CollectionFilter) ArrayEmpty(arrayName string) *CollectionFilter {
+	return c.Where(&EmptyArrayExpression{
+		arrayName: NewAttribute(arrayName),
+	})
+}
+
 // ---------------------
 // Commonly used filters/expressions
 // ---------------------
